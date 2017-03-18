@@ -29,23 +29,27 @@ public class PageRank{
      * Job 1:   Create the graph
      ***************************************/
     public static class CreateGraphMap extends Mapper<LongWritable, Text, Text, Text>{
+        @Override
         public void map(LongWritable Key, Text value, Context context) throws IOException, InterruptedException {
             //Retreive line .. Split it.. [0] = Node, [1] = Link;
             String line = value.toString();
             String[] tmpArray = line.split(" ");
+
+            System.out.println(tmpArray.toString());
 
             //Write the node and link to the reducers
             context.write(new Text(tmpArray[0]), new Text(tmpArray[1]));
         }
     }
 
-    public class CreateGraphReducer extends Reducer<Text, Text, Text, Text> {
+    public static class CreateGraphReducer extends Reducer<Text, Text, Text, Text> {
+        
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             
             //Add all different links to the node
             StringBuffer links = new StringBuffer();
-            while(values.hasNext()){
-                links.append(values.next());
+            for (Text val : values) {
+                links.append(val.toString());
             }
 
             System.out.println(key.toString() + " 1.0 "+ links.toString());
@@ -58,8 +62,9 @@ public class PageRank{
      * Job 2:   Calculate PageRank
      ***************************************/
 
+
     
-	public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception{
         /*********************************************************
          * Job 1:   Create the graph
          *          This job initializes the graph with values 
@@ -76,9 +81,15 @@ public class PageRank{
 
         createGraph.setMapperClass(CreateGraphMap.class);
         createGraph.setReducerClass(CreateGraphReducer.class);
+
         createGraph.setInputFormatClass(TextInputFormat.class);
+        
+        createGraph.setMapOutputKeyClass(Text.class);
+        createGraph.setMapOutputValueClass(Text.class);
+        
         createGraph.setOutputKeyClass(Text.class);
         createGraph.setOutputValueClass(Text.class);
+        
         createGraph.waitForCompletion(true);
         
 
@@ -88,11 +99,13 @@ public class PageRank{
          *          The job will be run 10 times
          *********************************************************/
 
+
+
         /*********************************************************
          * Job 3:   Readable Output Generator
          *          This job sorts the PageRank and makes it readable
          *********************************************************/
-    }	
+    }
 }
 
 
