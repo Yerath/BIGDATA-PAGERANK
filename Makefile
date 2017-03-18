@@ -1,4 +1,16 @@
 run: jar
+	hadoop fs -rm -f -r /user/${USER}
+
+	#Create folders
+	hadoop fs -mkdir /user/${USER}
+	hadoop fs -chown yerath /user/${USER}
+	hadoop fs -mkdir /user/${USER}/pagerank /user/${USER}/pagerank/input 
+
+	#Move the input files
+	hadoop fs -rm -f -r /user/${USER}/pagerank/input
+	hadoop fs -put graph /user/${USER}/pagerank/input
+
+	#Remove old results
 	hadoop fs -rm -f -r  /user/${USER}/pagerank/output
 	hadoop jar pagerank.jar nl.hu.hadoop.PageRank /user/${USER}/pagerank/input /user/${USER}/pagerank/output
 
