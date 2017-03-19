@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.Scanner;
  
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -22,26 +23,25 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 
 public class PageRank{
-    public float default_value  = 0;
-    public float jump           = 0;
-    
+    public static double jump = 0.15;
     /***************************************
      * Job 1:   Create the graph
      ***************************************/
     public static class CreateGraphMap extends Mapper<LongWritable, Text, Text, Text>{
-        @Override
         public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-            //Retreive line .. Split it.. [0] = Node, [1] = Link;
+            String[] tmpArray;
             String line = value.toString();
-            String[] tmpArray = line.split("\t");
+            if(line.contains("\t")){
+                tmpArray = line.split("\t");
+            }else{
+                tmpArray = line.split(" ");
+            }
 
-            //Write the node and link to the reducers
-            context.write(new Text(tmpArray[0]), new Text(tmpArray[1]));
+            context.write(new Text(tmpArray[0]), new Text(tmpArray[1]));           
         }
     }
 
     public static class CreateGraphReducer extends Reducer<Text, Text, Text, Text> {
-        
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             boolean first = true; 
             //Add all different links to the node
@@ -56,7 +56,6 @@ public class PageRank{
             }
             
             context.write(new Text(key.toString() + " 1.0"), new Text(links.toString()));
-
         }
     }
 
@@ -71,7 +70,6 @@ public class PageRank{
         private int total_links;
 
         public void map(LongWritable Key, Text value, Context context) throws IOException, InterruptedException{
-            //Retrieve Line {NODE VALUE  LINKS[]}
             String line = value.toString();
 
             //Break the line into [node value, links]
@@ -81,12 +79,14 @@ public class PageRank{
             //Give values
             node        = tmpNode[0];
             node_value  = tmpNode[1];
-            links       = tmpArray[1].split("#");
-            total_links = links.length;
+            
+            links = tmpArray[1].split("#");
 
+            total_links = links.length;
             for(int i = 0; i < links.length; i++){
-                //For every link... output [LINK] [ORIGIN, VALUE, TOTAL_LINKS]
-                context.write(new Text("" + links[i]), new Text("" + node + "," + node_value + "," + total_links));
+                if(!links[i].isEmpty()){ //Check for nodes without extra links.. they don't have any links so no new value has to be calculated
+                   context.write(new Text("" + links[i]), new Text("" + node + "," + node_value + "," + total_links));
+                }
             }
 
             context.write(new Text(node), new Text(Arrays.toString(links)));
@@ -99,8 +99,12 @@ public class PageRank{
             boolean first = true;
             double new_value = 0;
             String node_links = "";
+
+            List<String> debugList = new ArrayList<String>();
+
             for (Text val : values) {
-                //[0] == Origin, [1] == Origin currents value, [2] == Total number of links
+                debugList.add(val.toString());
+
                 if(!val.toString().contains("[")){
                     String[] tmpArray = val.toString().split(",");
                     new_value = new_value + (Double.parseDouble(tmpArray[1]) / Double.parseDouble(tmpArray[2]));
@@ -119,11 +123,13 @@ public class PageRank{
                             links.append("#" + link);
                         }
                     }
-
                     node_links = links.toString();
                 }
             }
+
+            new_value = (1-jump) + (jump * new_value);
             context.write(new Text(key.toString() + " " + new_value), new Text(node_links));
+            
         }
     }
 
@@ -211,7 +217,18 @@ public class PageRank{
 
     
     public static void main(String[] args) throws Exception{
-        int max_interations  = 10;
+        Scanner reader = new Scanner(System.in);  // Reading from System.in
+        System.out.print("Enter amount of iterations: ");
+        int max_interations = reader.nextInt(); // Scans the next token of the input as an int.
+
+        reader = new Scanner(System.in);  // Reading from System.in
+        System.out.print("Enter the jump factor (Normally 0.15): ");
+        jump = reader.nextDouble(); // Scans the next token of the input as an int.
+        
+        System.out.println();
+
+        System.out.println("Iterations set to : " + max_interations);
+        System.out.println("Jump factor set to : " + jump);
         
         /*********************************************************
          * Job 1:   Create the graph
