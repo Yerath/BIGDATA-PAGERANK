@@ -48,7 +48,6 @@ public class PageRank{
             }
 
             if(links.toString().isEmpty()){
-                System.out.println("Found an Dangling Node: " + key.toString());
                 dangeling_nodes.add(key.toString());
             }else{
                 String[] tmpArray = links.toString().split("#");
@@ -306,7 +305,7 @@ public class PageRank{
         System.out.println(" *          Runs till there are no Dangling Nodes ");
         System.out.println("*********************************************************/");
         int iteration = 0;
-        while(iteration < 20){
+        while(iteration < 10){
             try{
                 runJob0(args[0],args[1], iteration);
             }catch(IOException| InterruptedException | ClassNotFoundException e){
