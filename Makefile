@@ -31,7 +31,7 @@ pagerank.jar: build/org/myorg/PageRank.class
 
 build/org/myorg/PageRank.class: PageRank.java
 	mkdir -p build
-	javac -cp libs/hadoop-mapred-0.22.0.jar:libs/hadoop-common-2.7.3.jar:libs/hadoop-mapreduce-client-core-2.7.3.jar:libs/log4j-1.2.17.jar:libs/asciitable-0.2.5.jar *.java -d build -Xlint
+	javac -cp libs/commons-lang-2.6.jar:libs/hadoop-mapred-0.22.0.jar:libs/hadoop-common-2.7.3.jar:libs/hadoop-mapreduce-client-core-2.7.3.jar:libs/log4j-1.2.17.jar:libs/asciitable-0.2.5.jar *.java -d build -Xlint
 
 clean:
 	rm -rf build pagerank.jar
