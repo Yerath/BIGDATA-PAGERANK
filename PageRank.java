@@ -36,22 +36,29 @@ public class PageRank{
             }else{
                 tmpArray = line.split(" ");
             }
+            //Write the Node and Link
+            context.write(new Text(tmpArray[0]), new Text(tmpArray[1]));
 
-            context.write(new Text(tmpArray[0]), new Text(tmpArray[1]));           
+            //Write the link away (cause links are nodes 2 ) .. throw away the linkage if key is same as value
+            context.write(new Text(tmpArray[1]), new Text(tmpArray[1]));
+
         }
     }
 
     public static class CreateGraphReducer extends Reducer<Text, Text, Text, Text> {
         public void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             boolean first = true; 
+
             //Add all different links to the node
             StringBuffer links = new StringBuffer();
             for (Text val : values) {
-                if(first){
-                    links.append(val.toString());
-                    first = false;
-                }else{
-                    links.append("#" + val.toString());
+                if(key.toString() != val.toString()){
+                    if(first){
+                        links.append(val.toString());
+                        first = false;
+                    }else{
+                        links.append("#" + val.toString());
+                    }
                 }
             }
             
@@ -83,9 +90,11 @@ public class PageRank{
             links = tmpArray[1].split("#");
 
             total_links = links.length;
-            for(int i = 0; i < links.length; i++){
-                if(!links[i].isEmpty()){ //Check for nodes without extra links.. they don't have any links so no new value has to be calculated
-                   context.write(new Text("" + links[i]), new Text("" + node + "," + node_value + "," + total_links));
+            if(total_links != 0){
+                for(int i = 0; i < links.length; i++){
+                    if(!links[i].isEmpty()){ //Check for nodes without extra links.. they don't have any links so no new value has to be calculated
+                       context.write(new Text("" + links[i]), new Text("" + node + "," + node_value + "," + total_links));
+                    }
                 }
             }
 
